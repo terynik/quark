@@ -1,0 +1,3 @@
+databasePath,tableName,columnNames,columnTypes,partitionColumn,sortColumns,flushTimeLimit,flushSizeLimit
+/Users/nik/workspace/quark/dbPerf,memory,date|time|host|port|file|name|used|heap|peak|wmax|mmap|mphy|syms|symw,dtsissjjjjjjjj,date,time,00:01:00,10
+

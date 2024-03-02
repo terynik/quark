@@ -1,0 +1,4 @@
+databasePath,tableName,columnNames,columnTypes,partitionColumn,sortColumns,flushTimeLimit,flushSizeLimit
+/Users/nik/workspace/quark/db,quote,date|channel|sequence|symbol|timestamp|price,dsjstf,date,date|s,00:00:10,100
+/Users/nik/workspace/quark/db,status,date|channel|sequence|symbol|timestamp|status,dsjsts,date,date|s,00:00:10,100
+
