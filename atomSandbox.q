@@ -2,7 +2,9 @@
 tables[]
 
 select from memory
+`date`time xdesc select from cputime
 
+.z.i
 
 \t 1000
 \t 1

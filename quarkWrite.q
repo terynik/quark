@@ -1,4 +1,4 @@
-/ TODO: add <path> as parameter to <.quarkWrite.writeData>
+system "l /Users/nik/workspace/quark/quarkPerf.q";
 
 .quarkWrite.tables:([tableName:"s"$()] databasePath:"s"$(); columnNames:(); columnTypes:(); partitionColumn:"s"$(); sortColumns:(); flushTimeLimit:"t"$(); flushSizeLimit:"i"$(); lastFlushTimestamp:"t"$());
 .quarkWrite.listeners:([handle:"j"$(); databasePath:"s"$()] writeHandler:"s"$(); flushHandler:"s"$());
@@ -32,6 +32,10 @@
  };
 
 .quarkWrite.subscribe:{[path;writeListener;flushListener]
+    / if listener is already connected, we return empty list
+    /   most likely this is a ping message and we should tell client no that they are already connected
+    if[0 < count select from `.quarkWrite.listeners where handle=.z.w;:()];
+    
     / make the world aware that we have received some important things to do
     1 "New listener with handle ",string[.z.w]," from ",string[.z.h]," to database ",string[path],"\n";
 
@@ -48,25 +52,37 @@
     / remove all listeners which do not have an active handle
     /   design is to call an idempotent method in .z.pc and before invoking callbacks on listeners
     /   we still have to call it in .z.pc (which I don't like) but kdb is re-using handles
+    /   TODO: it's a good idea to write it the the log
     delete from `.quarkWrite.listeners where not handle in key .z.W;
+
+    / remove slow subscribers
+    /   TODO: make it smarter, e.g. remove those which consume more then their share of available heap in case of heap is over threshold
+    showSubs:where 1000000 < sum each .z.W;
+    if[0 ~ count showSubs;:(::)];
+    1 "----------------Disconnecting slow subscriber(s) with handle(s) ",sv[",";string each showSubs],"\n";
+    /hclose each showSubs;
  };
 
-/ TODO: do not send notifications about dabatase which listener is not subscriber to
+/ TODO: consider to add <path> as parameter to <.quarkWrite.writeData>
 .quarkWrite.writeData:{[name;data]
+    .quarkPerf.start[`.quarkWrite.writeData];
+
     / check that table is in our records and get it's description, otherwise throw an exception
     table:$[name in key .quarkWrite.tables;.quarkWrite.tables[name];'"Unknown table ",string[name]];
 
-    / add data to the memory cache table
-    .Q.dd[`.quarkCache;name] insert data;
-
     / funky debug output
     1 "Inserting data: ",sv[",";{(string count value .Q.dd[`.quarkCache;x]),"->",(string x)} each exec tableName from .quarkWrite.tables],"...\r";
+
+    / add data to the memory cache table
+    .Q.dd[`.quarkCache;name] insert data;
+    .quarkPerf.check[`.quarkWrite.writeData;`insert;name];
 
     / remove inactive handlers
     .quarkWrite.cleanUpHandles[];
 
     / notify our listeners that they need to reload their partitions from the disk
     {[listener;name;data] neg[listener[`handle]](listener[`writeHandler];name;data); }[;name;data] each 0!select from `.quarkWrite.listeners where databasePath=table[`databasePath], not writeHandler = `;
+    .quarkPerf.check[`.quarkWrite.writeData;`notify;name];
  };
 
 .quarkWrite.flushTable:{[name] 
@@ -77,7 +93,11 @@
     if [0 ~ count value .Q.dd[`.quarkCache;name];:(::)];
     
     / get data from in-memory cache table and reenumerate it
+    /   we have to preserve current sym file, as <.Q.en> will update it
+    /   it's a design choice that <.quarkWrite> library doesn't require database to be loaded
+    symCopy:get `sym;
     data:.Q.en[hsym table[`databasePath];value .Q.dd[`.quarkCache;name]];
+    `sym set symCopy;
 
     / empty in-memory cache table
     delete from .Q.dd[`.quarkCache;name];
@@ -106,11 +126,14 @@
  };
 
 .quarkWrite.flushDatabase:{[currentTime;path]
+    .quarkPerf.start[`.quarkWrite.flushDatabase];
+
     / get all tables in this database which we will need to write to the disk
     tableNames:exec tableName from .quarkWrite.tables where databasePath=path;
 
     / write them
     t01:.z.T; .quarkWrite.flushTable each tableNames;
+    .quarkPerf.check[`.quarkWrite.flushDatabase;`flushTables;path];
 
     / update time when we last flushed
     update lastFlushTimestamp:currentTime from `.quarkWrite.tables where databasePath=path;
@@ -123,6 +146,7 @@
     /   it's a reasonable option, but my choice was not to complicate the code and also avoid delta-based calculations
     /   this is an arguable decision and we might revisit it if scanning partitions on disk actually takes reasonable amount of time
     t02:.z.T; tableCounts:tableNames!{[d;p;t] sum {[d;p;t] path:.Q.par[d;p;t]; $[() ~ key path;0j;count get path]}[d;;t] each p}[hsym[path];(key hsym[path]) except `sym;] each tableNames;
+    .quarkPerf.check[`.quarkWrite.flushDatabase;`countTables;path];
 
     / tell the world we have achieved something very important
     t99:.z.T; 1 "Flushing ",string[path]," complete; write time: ",string[0.001*(t02-t01)],"us, count time: ",string[0.001*(t99-t02)],"us\n";

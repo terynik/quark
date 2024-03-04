@@ -7,6 +7,7 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     self[`server]:server;
     self[`handle]:0Nj;
     self[`connectHandler]:`.quarkQuery.connectHandler;
+    self[`pingHandler]:`.quarkQuery.connectHandler;
     self[`disconnectHandler]:`.quarkQuery.disconnectHandler;
     self[`databasePath]:path;
     self[`writeHandler]:$[realtime;`.quarkQuery.writeHandler;`];
@@ -23,16 +24,20 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
 
 .quarkQuery.connectHandler:{[self]
     / subscribe to the database updates on the servers, the call will tell us what tables are in the database
-    self[`tables]:self[`handle](`.quarkWrite.subscribe;self[`databasePath];self[`writeHandler];self[`flushHandler]);
+    result:self[`handle](`.quarkWrite.subscribe;self[`databasePath];self[`writeHandler];self[`flushHandler]);
+
+    / if result is an empty list, then we are already connected, hence nothing to do
+    if[() ~ result;:(::)];
 
     / make the world aware we have achieved some huge success
-    1 "Subscribed for ",sv[",";string each key self[`tables]]," tables in ",string[self[`databasePath]],"\n";
-
-    / initial state of all tables is DISK, we will wait for the next flushHandler callback to change to LIVE
-    self[`states]:(key self[`tables])!({`DISK} each key self[`tables]);
+    1 "Subscribed for ",sv[",";string each key result]," tables in ",string[self[`databasePath]],"\n";
 
     / create empty in-memory cache tables
-    set'[.Q.dd[`.quarkCache;] each key self[`tables];value self[`tables]];
+    set'[.Q.dd[`.quarkCache;] each key result;value result];
+
+    / initial state of all tables is DISK, we will wait for the next flushHandler callback to change to LIVE
+    self[`states]:(key result)!(count key result)#`DISK;
+    self[`tables]:result;
 
     `.quarkQuery.instance set self; 
  };

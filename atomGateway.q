@@ -7,19 +7,20 @@ system "l /Users/nik/workspace/quark/quarkQuery.q";
 /.z.pg:{.quarkQuery.interceptSelect[x]};
 
 sleep:{t:.z.p;while[.z.p<t+x]};
+sleep 00:00:30
 
 /sleep 00:00:15
 /\x .z.pg
 /.z.ts:{};
 
-(select diskMax:max sequence by channel from quote) ^ (select cacheMin:min sequence, cacheMax:max sequence by channel from .Q.dd[`.quarkCache;`quote])
+/(select diskMax:max sequence by channel from quote) ^ (select cacheMin:min sequence, cacheMax:max sequence by channel from .Q.dd[`.quarkCache;`quote])
 
-select from quote
-select max sequence by channel from quote
-select count i by channel,sequence from quote
-select from quote where channel=`channel1;
-select from quote where channel=`channel1, price > 50.0;
-select max sequence, max price, count distinct symbol by channel from quote
+/select from quote
+/select max sequence by channel from quote
+/select count i by channel,sequence from quote
+/select from quote where channel=`channel1;
+/select from quote where channel=`channel1, price > 50.0;
+/select max sequence, max price, count distinct symbol by channel from quote
 
 /.quarkQuery.select1[query:"select from quote"]
 /.[.quarkQuery.executeSelect;1_parse "select from quote where channel=`channel1"]
