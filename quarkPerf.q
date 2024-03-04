@@ -26,7 +26,7 @@
 
 .quarkPerf.reset:{[]
     currentTime:.z.t; 
-    result:`startTime`endTime xcols update startTime:get `.quarkPerf.resetTime, endTime:currentTime from 0!select from .quarkPerf.checkpoints;
+    result:`startTime`sampleTime xcols update startTime:get `.quarkPerf.resetTime, sampleTime:"n"$(currentTime-.quarkPerf.resetTime) from 0!select from .quarkPerf.checkpoints;
     if[00:00:30 > currentTime-.quarkPerf.resetTime;:0#result];
     delete from `.quarkPerf.checkpoints;
     set[`.quarkPerf.resetTime;currentTime];

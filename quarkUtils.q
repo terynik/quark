@@ -9,8 +9,11 @@
 / both <client[`connectHandler]> and <client[`disconnectHandler]> will be called with <client> as a parameter
 /   it's responsibility of these handlers to update global state
 .quarkUtils.reconnect:{[client]
-    / check if we *were* connected and *are* still connected, hence it's nothing to do
-    if [client[`handle] in key .z.W;:1b];
+    / check if we *were* connected and *are* still connected, then ping
+    if [client[`handle] in key .z.W;
+        @[value client[`pingHandler];client;{1 "Ping handler threw an error (",x,")\n"}];
+        :1b
+    ];
 
     / check if we *were* connected but *are* disconnected now 
     if [not null client[`handle];

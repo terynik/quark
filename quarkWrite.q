@@ -1,4 +1,4 @@
-system "l /Users/nik/workspace/quark/quarkPerf.q";
+system "l quarkPerf.q";
 
 .quarkWrite.tables:([tableName:"s"$()] databasePath:"s"$(); columnNames:(); columnTypes:(); partitionColumn:"s"$(); sortColumns:(); flushTimeLimit:"t"$(); flushSizeLimit:"i"$(); lastFlushTimestamp:"t"$());
 .quarkWrite.listeners:([handle:"j"$(); databasePath:"s"$()] writeHandler:"s"$(); flushHandler:"s"$());
@@ -57,9 +57,9 @@ system "l /Users/nik/workspace/quark/quarkPerf.q";
 
     / remove slow subscribers
     /   TODO: make it smarter, e.g. remove those which consume more then their share of available heap in case of heap is over threshold
-    showSubs:where 1000000 < sum each .z.W;
+    showSubs:where 10000000 < sum each .z.W;
     if[0 ~ count showSubs;:(::)];
-    1 "----------------Disconnecting slow subscriber(s) with handle(s) ",sv[",";string each showSubs],"\n";
+    /1 "----------------Disconnecting slow subscriber(s) with handle(s) ",sv[",";string each showSubs],"\n";
     /hclose each showSubs;
  };
 
@@ -95,9 +95,9 @@ system "l /Users/nik/workspace/quark/quarkPerf.q";
     / get data from in-memory cache table and reenumerate it
     /   we have to preserve current sym file, as <.Q.en> will update it
     /   it's a design choice that <.quarkWrite> library doesn't require database to be loaded
-    symCopy:get `sym;
+    symCopy:$[`sym ~ key `sym;get `sym;(::)];
     data:.Q.en[hsym table[`databasePath];value .Q.dd[`.quarkCache;name]];
-    `sym set symCopy;
+    if[not symCopy ~ (::);`sym set symCopy];
 
     / empty in-memory cache table
     delete from .Q.dd[`.quarkCache;name];

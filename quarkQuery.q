@@ -1,4 +1,4 @@
-system "l /Users/nik/workspace/quark/quarkUtils.q";
+system "l quarkUtils.q";
 
 .quarkQuery.instance:(::);
 
@@ -55,7 +55,7 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     / validate the table
     if[not table in key self[`states];'table];
 
-    1 "Received ",string[count data]," records in ",string[table]," (status ",string[self[`states][table]],", ",string[count value table]," on disk, ",string[count value .Q.dd[`.quarkCache;table]]," in cache)\n";
+    1 "Received ",string[count data]," records into ",string[table]," (status ",string[self[`states][table]],", ",string[count value table]," on disk, ",string[count value .Q.dd[`.quarkCache;table]]," in cache)\n";
 
     / if table is not in LIVE state, we ignore the data
     if[not `LIVE = self[`states][table];:(::)]; 
@@ -67,8 +67,7 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
 .quarkQuery.flushHandler:{[tableCounts]
     self:get `.quarkQuery.instance;
 
-    /`tableCounts set tableCounts;
-    1 "Received reload event from ",string[.z.h]," with \n";
+    1 "Received flush event with table counts ",sv[", ";{string[x],":",string[y]}'[key tableCounts;value tableCounts]],"\n";
 
     / TODO: we might not need keys in tableCounts
     if[not (key self[`states]) ~ (key tableCounts);show "something is wrong, keys don't match"];
@@ -77,9 +76,14 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     {[table] delete from table;} each .Q.dd[`.quarkCache;] each key self[`states];
 
     / reload database from the disk
-    t01:.z.p; .Q.l[self[`databasePath]]; 
+    /   TODO: we need to do something with paths, mistical .Q.lo (https://code.kx.com/q/ref/dotq/#lo-load-without) is not defined 
+    /   maybe it's time to learn <k> and implement .Q.lo ourselves
+    t01:.z.p; .Q.l[`$"."]; 
 
     / re-create missing partitions just in memory
+    /   TODO: this actually takes time and it's not required
+    /   <.quarkWrite> should make sure that when a new partition is created for one table...
+    /   ...then it creates an empty partition for all other tables 
     t02:.z.p; .Q.bv[];
 
     / count size, it will actually take a while as the disk has to be scanned
