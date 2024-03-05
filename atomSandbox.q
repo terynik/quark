@@ -1,4 +1,4 @@
-.Q.l[`$"dbPerf"]; 
+.Q.l[`$"/Users/nik/workspace/quark/dbPerf"]; 
 tables[]
 
 meta cputime 

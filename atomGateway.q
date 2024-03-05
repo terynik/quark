@@ -1,6 +1,6 @@
 system "l quarkQuery.q";
 
-.quarkQuery.init[server:`:localhost:9981;path:`$"dbTest";realtime:1b];
+.quarkQuery.init[server:`:localhost:9981;path:`$"/Users/nik/workspace/quark/dbTest";realtime:1b];
 
 .z.ts:{.quarkUtils.reconnect[.quarkQuery.instance]};
 
@@ -19,7 +19,7 @@ sleep:{t:.z.p;while[.z.p<t+x]};
 /select count i by channel,sequence from quote
 /select from quote where channel=`channel1;
 /select from quote where channel=`channel1, price > 50.0;
-select max sequence, max price, count distinct symbol by channel from quote
+/select max sequence, max price, count distinct symbol by channel from quote
 
 /.quarkQuery.select1[query:"select from quote"]
 /.[.quarkQuery.executeSelect;1_parse "select from quote where channel=`channel1"]

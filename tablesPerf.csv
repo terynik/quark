@@ -1,4 +1,4 @@
 databasePath,tableName,columnNames,columnTypes,partitionColumn,sortColumns,flushTimeLimit,flushSizeLimit
-dbPerf,memory,date|time|file|host|port|pid|used|heap|peak|wmax|mmap|mphy|syms|symw,dtssiijjjjjjjj,date,time,00:00:10,1000
-dbPerf,wqueue,date|time|file|host|port|pid|handle|remoteHost|removePort|size,dtssiiisij,date,time,00:00:10,1000
-dbPerf,cputime,date|time|file|host|port|pid|startTime|sampleTime|segment|checkpoint|parameter|execCount|execTime,dtssiitnsssjn,date,time,00:00:10,1000
+/Users/nik/workspace/quark/dbPerf,memory,date|time|file|host|port|pid|used|heap|peak|wmax|mmap|mphy|syms|symw,dtssiijjjjjjjj,date,time,00:00:10,1000
+/Users/nik/workspace/quark/dbPerf,wqueue,date|time|file|host|port|pid|handle|remoteHost|removePort|size,dtssiiisij,date,time,00:00:10,1000
+/Users/nik/workspace/quark/dbPerf,cputime,date|time|file|host|port|pid|startTime|sampleTime|segment|checkpoint|parameter|execCount|execTime,dtssiitnsssjn,date,time,00:00:10,1000

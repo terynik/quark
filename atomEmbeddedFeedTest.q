@@ -7,7 +7,7 @@ system "l quarkMonitor.q";
 
 / load database and change back to the original directory
 /   ...where is mistical .Q.lo (https://code.kx.com/q/ref/dotq/#lo-load-without)?
-.Q.l[`$"dbTest"]; 
+.Q.l[`$"/Users/nik/workspace/quark/dbTest"]; 
 
 if[.Q.qt[`quote];
     sequences:0!select last sequence by channel from quote where date=last date;

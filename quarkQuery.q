@@ -78,7 +78,7 @@ system "l quarkUtils.q";
     / reload database from the disk
     /   TODO: we need to do something with paths, mistical .Q.lo (https://code.kx.com/q/ref/dotq/#lo-load-without) is not defined 
     /   maybe it's time to learn <k> and implement .Q.lo ourselves
-    t01:.z.p; .Q.l[`$"."]; 
+    t01:.z.p; .Q.l[self[`databasePath]]; 
 
     / re-create missing partitions just in memory
     /   TODO: this actually takes time and it's not required

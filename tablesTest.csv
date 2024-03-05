@@ -1,4 +1,4 @@
 databasePath,tableName,columnNames,columnTypes,partitionColumn,sortColumns,flushTimeLimit,flushSizeLimit
-dbTest,quote,date|channel|sequence|symbol|timestamp|price,dsjstf,date,date|s,00:00:10,10000000
-dbTest,status,date|channel|sequence|symbol|timestamp|status,dsjsts,date,date|s,00:00:10,10000000
+/Users/nik/workspace/quark/dbTest,quote,date|channel|sequence|symbol|timestamp|price,dsjstf,date,date|s,00:00:10,10000000
+/Users/nik/workspace/quark/dbTest,status,date|channel|sequence|symbol|timestamp|status,dsjsts,date,date|s,00:00:10,10000000
 
