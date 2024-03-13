@@ -1,0 +1,75 @@
+<html>
+<header>
+  <title>monitor</title>
+</header>
+<script type="text/javascript">
+  let socket = new WebSocket("ws://localhost:9982");
+
+  socket.onopen = function (e) {
+    alert("[open] Connection established");
+  };
+
+  socket.onmessage = function (event) {
+    var outputHTML, data = JSON.parse(event.data);
+    if (typeof data == "object") {
+      /* if an object, then message must be a table or a dictionary */
+      if (data.length) {
+        /*if object has a length then it is a table*/
+        outputHTML = generateTableHTML(data);
+      } else {
+        /* 
+            if object has no length, it is a dictionary, 
+            in this case we will iterate over the keys to print 
+            the key|value pairs as would be displayed in a q console
+        */
+        for (var x in data)
+          outputHTML += x + " | " + data[x] + "<br />";
+      }
+    } else {
+      /* if not an object, then message must have simple data structure*/
+      outputHTML = data;
+    };
+    id1.innerHTML = outputHTML;
+    //alert(`[message] Data received from server: ${event.data}`);
+  };
+
+  function generateTableHTML(data) {
+    /* we will iterate through the object wrapping it in the HTML table tags */
+    var tableHTML = '<table border="1"><tr>';
+    for (var x in data[0]) {
+      /* loop through the keys to create the table headers */
+      tableHTML += '<th>' + x + '</th>';
+    }
+    tableHTML += '</tr>';
+    for (var i = 0; i < data.length; i++) {
+      /* loop through the rows, putting tags around each col value */
+      tableHTML += '<tr>';
+      for (var x in data[0]) {
+        tableHTML += '<td>' + data[i][x] + '</td>';
+      }
+      tableHTML += '</tr>';
+    }
+    tableHTML += '</table>';
+    return tableHTML;
+  }
+
+  socket.onclose = function (event) {
+    if (event.wasClean) {
+      alert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+    } else {
+      // e.g. server process killed or network down
+      // event.code is usually 1006 in this case
+      alert('[close] Connection died');
+    }
+  };
+
+  socket.onerror = function (error) {
+    alert(`[error]`);
+  };
+</script>
+
+<body>
+  <div id="id1">div1</div>
+</body>
+
+</html>

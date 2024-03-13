@@ -1,5 +1,5 @@
 / TODO: change <self> to be a reference
-
+/ TODO: add <wrap> to catch all errors
 
 / <client> is a dictionary which should define:
 /   <client[`handle]> - handle to active connection to the server or 0Nj otherwise;

@@ -1,4 +1,4 @@
-system "l quarkPerf.q";
+system "l /Users/nik/workspace/quark/quarkPerf.q";
 
 .quarkWrite.tables:([tableName:"s"$()] databasePath:"s"$(); columnNames:(); columnTypes:(); partitionColumn:"s"$(); sortColumns:(); flushTimeLimit:"t"$(); flushSizeLimit:"i"$(); lastFlushTimestamp:"t"$());
 .quarkWrite.listeners:([handle:"j"$(); databasePath:"s"$()] writeHandler:"s"$(); flushHandler:"s"$());
@@ -35,7 +35,7 @@ system "l quarkPerf.q";
     / if listener is already connected, we return empty list
     /   most likely this is a ping message and we should tell client no that they are already connected
     if[0 < count select from `.quarkWrite.listeners where handle=.z.w;:()];
-    
+
     / make the world aware that we have received some important things to do
     1 "New listener with handle ",string[.z.w]," from ",string[.z.h]," to database ",string[path],"\n";
 

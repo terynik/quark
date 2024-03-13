@@ -1,0 +1,3 @@
+databasePath,tableName,columnNames,columnTypes,partitionColumn,sortColumns,flushTimeLimit,flushSizeLimit
+/Users/nik/workspace/quark/dbCep,minuteBar,date|sourceCount|minute|symbol|quoteCount|minPrice|maxPrice,djusjff,date,date|minute|symbol,00:00:10,10000000
+

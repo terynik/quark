@@ -39,10 +39,10 @@ enableMonitor:1b;
 
 .z.ts:{
     if[enableChannel1;
-        writeQuoteData[channel:`channel1;n:rand 100]
+        writeQuoteData[channel:`channel1;n:rand 10]
     ];
     if[enableChannel2;
-        writeQuoteData[channel:`channel2;n:rand 100]
+        writeQuoteData[channel:`channel2;n:rand 10]
     ];
     if[enableMonitor;
         .quarkWrite.writeData[name:`memory;data:(flip `date`time`file`host`port`pid!enlist each (.z.D;.z.T;.z.f;.z.h;system "p";.z.i)) ^ (flip enlist each .Q.w[])];

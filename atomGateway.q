@@ -21,7 +21,7 @@ sleep:{t:.z.p;while[.z.p<t+x]};
 /select from quote where channel=`channel1, price > 50.0;
 /select max sequence, max price, count distinct symbol by channel from quote
 
-/.quarkQuery.select1[query:"select count i from quote"]
+.quarkQuery.select1[query:"select sum price from quote"]
 /.quarkQuery.select1[query:"select from quote where channel=`channel1"]
 /.quarkQuery.select1[query:"select from quote where channel=`channel1, price > 50.0"]
 /.quarkQuery.select1[query:"select max price, count distinct symbol by channel from quote"]
