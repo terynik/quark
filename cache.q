@@ -1,15 +1,15 @@
 system "l /Users/nik/workspace/quark/quarkUtils.q";
 
-.adb.instance:(::);
+.cache.instance:(::);
 
 / TODO: tables
-.adb.init:{[server;path;realtime;writeHandler;flushHandler]
+.cache.init:{[server;path;realtime;writeHandler;flushHandler]
     self:enlist[`]!enlist(::);
     self[`server]:server;
     self[`handle]:0Nj;
-    self[`connectHandler]:`.adb.connectHandler;
-    self[`pingHandler]:`.adb.connectHandler;
-    self[`disconnectHandler]:`.adb.disconnectHandler;
+    self[`connectHandler]:`.cache.connectHandler;
+    self[`pingHandler]:`.cache.connectHandler;
+    self[`disconnectHandler]:`.cache.disconnectHandler;
     self[`databasePath]:path;
     self[`writeHandler]:writeHandler;
     self[`flushHandler]:flushHandler;
@@ -21,16 +21,16 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     .Q.l[self[`databasePath]];
     .Q.bv[];
 
-    `.adb.instance set self;
+    `.cache.instance set self;
  };
 
-.adb.reconnect:{[]
-    .quarkUtils.reconnect[.adb.instance];
+.cache.reconnect:{[]
+    .quarkUtils.reconnect[.cache.instance];
  };
 
-.adb.connectHandler:{[self]
+.cache.connectHandler:{[self]
     / subscribe to the database updates on the servers, the call will tell us what tables are in the database
-    result:self[`handle](`.quarkWrite.subscribe;self[`databasePath];`.adb.writeHandler;`.adb.flushHandler);
+    result:self[`handle](`.write.subscribe;self[`databasePath];`.cache.writeHandler;`.cache.flushHandler);
 
     / if result is an empty list, then we are already connected, hence nothing to do
     if[() ~ result;:(::)];
@@ -45,23 +45,23 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     self[`states]:(key result)!(count key result)#`DISK;
     self[`tables]:result;
 
-    `.adb.instance set self; 
+    `.cache.instance set self; 
  };
 
-.adb.disconnectHandler:{[self]
+.cache.disconnectHandler:{[self]
     / clean up in-memory cache
     {[table] delete from table;} each .Q.dd[`.quarkCache;] each key self[`tables];
    
-    `.adb.instance set self;
+    `.cache.instance set self;
  };
 
-.adb.isLive:{[tableName]
-    self:get `.adb.instance;
+.cache.isLive:{[tableName]
+    self:get `.cache.instance;
     :`LIVE = self[`states][tableName];
  };
 
-.adb.writeHandler:{[tableName;data]
-    self:get `.adb.instance;
+.cache.writeHandler:{[tableName;data]
+    self:get `.cache.instance;
 
     / validate the table
     if[not tableName in key self[`states];'tableName];
@@ -75,8 +75,8 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     .[self[`writeHandler];(tableName;data)];
  };
 
-.adb.flushHandler:{[tableCounts]
-    self:get `.adb.instance;
+.cache.flushHandler:{[tableCounts]
+    self:get `.cache.instance;
 
     1 "Received flush event with table counts ",sv[", ";{string[x],":",string[y]}'[key tableCounts;value tableCounts]],"\n";
 
@@ -98,7 +98,7 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     t02:.z.p; .Q.bv[];
 
     / count size, it will actually take a while as the disk has to be scanned
-    /   in real deployment, it's assumed that number of partitions accessable via <.adb> is limited to one day or one week
+    /   in real deployment, it's assumed that number of partitions accessable via <.cache> is limited to one day or one week
     t03:.z.p; localCounts:{[table] count value table} each key self[`states];
 
     / counts must match, otherwise we are either behind (hence we must ignore new in-memory cache data)
@@ -108,27 +108,27 @@ system "l /Users/nik/workspace/quark/quarkUtils.q";
     /   TODO: it will be nice to add table counts (both local and remote in case of DISK status)
     t99:.z.p; 1 "Reloaded ",string[self[`databasePath]]," in ",string[0.001*(t02-t01)],"+",string[0.001*(t03-t02)],"+",string[0.001*(t99-t03)],"us, table status: ",sv[", ";{[t;s] sv[" is ";string each (t;s)]}'[key self[`states];value self[`states]]],"\n";
 
-    `.adb.instance set self;
+    `.cache.instance set self;
 
     / business logic callback
     .[self[`flushHandler];enlist tableCounts];
  };
 
-.adb.interceptSelect:{[x]
+.cache.interceptSelect:{[x]
     /`x set x; show x;
     if[not 10h = type x;:value x];
     tree:parse x;
     if[not 5 = count tree;:value x];
     if[not tree[0] = (parse "?[;;;]")[0];:value x];
     /set'[`op`t`c`b`a;tree]; show tree;
-    :.adb.executeSelect[tree[1];tree[2];tree[3];tree[4]];
+    :.cache.executeSelect[tree[1];tree[2];tree[3];tree[4]];
  };
 
-.adb.select1:{[query]
-    :.[.adb.select;1_parse query];
+.cache.select1:{[query]
+    :.[.cache.select;1_parse query];
  };
 
-.adb.select:{[table;c;b;a]
+.cache.select:{[table;c;b;a]
     /set'[`table`c`b`a;(table;c;b;a)];
 
     / check if the table has a cache, this function is supposed to be called only for "hybrid" tables,

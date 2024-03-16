@@ -8,7 +8,7 @@ seq3:$[`channel3 in key sequences;sequences[`channel3;`sequence];0j];
 self:`handle`server`connectHandler`disconnectHandler!(0Nj;`:localhost:9981;`connectHandler;`disconnectHandler);
 
 connectHandler:{[self]
-    self[`handle](`.quarkWrite.subscribe;`$"/Users/nik/workspace/quark/db";`;`flushHandler);
+    self[`handle](`.write.subscribe;`$"/Users/nik/workspace/quark/db";`;`flushHandler);
     `self set self;
  };
 
@@ -24,7 +24,7 @@ flushHandler:{[tableCounts]
 .z.ts:{};
 .z.ts:{
     if[not .quarkUtils.reconnect[self];:(::)];
-    n:1+rand 9; seq:get `seq3; neg[self[`handle]](`.quarkWrite.writeData;table:`quote;data:([]date:n#.z.D; channel:n#`channel3; sequence:seq+til n; symbol:n?`$'.Q.a; timestamp:n#.z.T; price:50f+n?50f)); `seq3 set seq+n;
+    n:1+rand 9; seq:get `seq3; neg[self[`handle]](`.write.writeData;table:`quote;data:([]date:n#.z.D; channel:n#`channel3; sequence:seq+til n; symbol:n?`$'.Q.a; timestamp:n#.z.T; price:50f+n?50f)); `seq3 set seq+n;
  };
 
 /.z.exit:{.quarkUtils.disconnect[]};

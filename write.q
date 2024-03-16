@@ -1,9 +1,9 @@
 system "l /Users/nik/workspace/quark/quarkPerf.q";
 
-.quarkWrite.tables:([tableName:"s"$()] databasePath:"s"$(); columnNames:(); columnTypes:(); partitionColumn:"s"$(); sortColumns:(); flushTimeLimit:"t"$(); flushSizeLimit:"i"$(); lastFlushTimestamp:"t"$());
-.quarkWrite.listeners:([handle:"j"$(); databasePath:"s"$()] writeHandler:"s"$(); flushHandler:"s"$());
+.write.tables:([tableName:"s"$()] databasePath:"s"$(); columnNames:(); columnTypes:(); partitionColumn:"s"$(); sortColumns:(); flushTimeLimit:"t"$(); flushSizeLimit:"i"$(); lastFlushTimestamp:"t"$());
+.write.listeners:([handle:"j"$(); databasePath:"s"$()] writeHandler:"s"$(); flushHandler:"s"$());
 
-.quarkWrite.loadTableConfig:{[pathToConfigFile]
+.write.loadTableConfig:{[pathToConfigFile]
     / read configuration file
     config:0:[("ss**s*ti";enlist csv);pathToConfigFile];
 
@@ -20,40 +20,40 @@ system "l /Users/nik/workspace/quark/quarkPerf.q";
     {[table] .Q.dd[`.quarkCache;table[`tableName]] set flip table[`columnNames]!{x$()} each table[`columnTypes]; } each config;
 
     / insert configuration into global config table
-    `.quarkWrite.tables insert config;
+    `.write.tables insert config;
  };
 
-.quarkWrite.cleanUpTables:{[]
+.write.cleanUpTables:{[]
     / check if <.quarkCache> namespace exists and delete all in-memory cache tables
-    if[0 < count key `.quarkCache;![`.quarkCache;();0b;exec tableName from `.quarkWrite.tables]];
+    if[0 < count key `.quarkCache;![`.quarkCache;();0b;exec tableName from `.write.tables]];
 
     / remove all configured tables
-    delete from `.quarkWrite.tables;
+    delete from `.write.tables;
  };
 
-.quarkWrite.subscribe:{[path;writeListener;flushListener]
+.write.subscribe:{[path;writeListener;flushListener]
     / if listener is already connected, we return empty list
     /   most likely this is a ping message and we should tell client no that they are already connected
-    if[0 < count select from `.quarkWrite.listeners where handle=.z.w;:()];
+    if[0 < count select from `.write.listeners where handle=.z.w;:()];
 
     / make the world aware that we have received some important things to do
     1 "New listener with handle ",string[.z.w]," from ",string[.z.h]," to database ",string[path],"\n";
 
     / add the listener to internal table, we'll use it later to invoke callbacks
-    `.quarkWrite.listeners upsert (.z.w;path;writeListener;flushListener);
+    `.write.listeners upsert (.z.w;path;writeListener;flushListener);
 
     / we return tableNames and also table structure, so the listener can create a in-memory cache table
     /   we simply do <0#> to take only table structure, not the records from our own in-memeory cache
-    tableNames:exec tableName from `.quarkWrite.tables where databasePath=path;
+    tableNames:exec tableName from `.write.tables where databasePath=path;
     :tableNames!({[table] 0#value .Q.dd[`.quarkCache;table]} each tableNames);
  };
 
-.quarkWrite.cleanUpHandles:{[]
+.write.cleanUpHandles:{[]
     / remove all listeners which do not have an active handle
     /   design is to call an idempotent method in .z.pc and before invoking callbacks on listeners
     /   we still have to call it in .z.pc (which I don't like) but kdb is re-using handles
     /   TODO: it's a good idea to write it the the log
-    delete from `.quarkWrite.listeners where not handle in key .z.W;
+    delete from `.write.listeners where not handle in key .z.W;
 
     / remove slow subscribers
     /   TODO: make it smarter, e.g. remove those which consume more then their share of available heap in case of heap is over threshold
@@ -63,38 +63,38 @@ system "l /Users/nik/workspace/quark/quarkPerf.q";
     /hclose each showSubs;
  };
 
-/ TODO: consider to add <path> as parameter to <.quarkWrite.writeData>
-.quarkWrite.writeData:{[name;data]
-    .quarkPerf.start[`.quarkWrite.writeData];
+/ TODO: consider to add <path> as parameter to <.write.writeData>
+.write.writeData:{[name;data]
+    .quarkPerf.start[`.write.writeData];
 
     / check that table is in our records and get it's description, otherwise throw an exception
-    table:$[name in key .quarkWrite.tables;.quarkWrite.tables[name];'"Unknown table ",string[name]];
+    table:$[name in key .write.tables;.write.tables[name];'"Unknown table ",string[name]];
 
     / funky debug output
-    1 "Inserting data: ",sv[",";{(string count value .Q.dd[`.quarkCache;x]),"->",(string x)} each exec tableName from .quarkWrite.tables],"...\r";
+    1 "Inserting data: ",sv[",";{(string count value .Q.dd[`.quarkCache;x]),"->",(string x)} each exec tableName from .write.tables],"...\r";
 
     / add data to the memory cache table
     .Q.dd[`.quarkCache;name] insert data;
-    .quarkPerf.check[`.quarkWrite.writeData;`insert;name];
+    .quarkPerf.check[`.write.writeData;`insert;name];
 
     / remove inactive handlers
-    .quarkWrite.cleanUpHandles[];
+    .write.cleanUpHandles[];
 
     / notify our listeners that they need to reload their partitions from the disk
-    {[listener;name;data] neg[listener[`handle]](listener[`writeHandler];name;data); }[;name;data] each 0!select from `.quarkWrite.listeners where databasePath=table[`databasePath], not writeHandler = `;
-    .quarkPerf.check[`.quarkWrite.writeData;`notify;name];
+    {[listener;name;data] neg[listener[`handle]](listener[`writeHandler];name;data); }[;name;data] each 0!select from `.write.listeners where databasePath=table[`databasePath], not writeHandler = `;
+    .quarkPerf.check[`.write.writeData;`notify;name];
  };
 
-.quarkWrite.flushTable:{[name] 
+.write.flushTable:{[name] 
     / check that table is in our records and get it's description, otherwise throw an exception
-    table:$[name in key .quarkWrite.tables;.quarkWrite.tables[name];'"Unknown table ",string[name]];
+    table:$[name in key .write.tables;.write.tables[name];'"Unknown table ",string[name]];
 
     / let's check if there is anything to do at all...
     if [0 ~ count value .Q.dd[`.quarkCache;name];:(::)];
     
     / get data from in-memory cache table and reenumerate it
     /   we have to preserve current sym file, as <.Q.en> will update it
-    /   it's a design choice that <.quarkWrite> library doesn't require database to be loaded
+    /   it's a design choice that <.write> library doesn't require database to be loaded
     symCopy:$[`sym ~ key `sym;get `sym;(::)];
     data:.Q.en[hsym table[`databasePath];value .Q.dd[`.quarkCache;name]];
     if[not symCopy ~ (::);`sym set symCopy];
@@ -125,44 +125,44 @@ system "l /Users/nik/workspace/quark/quarkPerf.q";
     {[data;operator;indexes] operator[data[indexes]]}[data;;]'[operators;value partitions];
  };
 
-.quarkWrite.flushDatabase:{[currentTime;path]
-    .quarkPerf.start[`.quarkWrite.flushDatabase];
+.write.flushDatabase:{[currentTime;path]
+    .quarkPerf.start[`.write.flushDatabase];
 
     / get all tables in this database which we will need to write to the disk
-    tableNames:exec tableName from .quarkWrite.tables where databasePath=path;
+    tableNames:exec tableName from .write.tables where databasePath=path;
 
     / write them
-    t01:.z.T; .quarkWrite.flushTable each tableNames;
-    .quarkPerf.check[`.quarkWrite.flushDatabase;`flushTables;path];
+    t01:.z.T; .write.flushTable each tableNames;
+    .quarkPerf.check[`.write.flushDatabase;`flushTables;path];
 
     / update time when we last flushed
-    update lastFlushTimestamp:currentTime from `.quarkWrite.tables where databasePath=path;
+    update lastFlushTimestamp:currentTime from `.write.tables where databasePath=path;
 
     / a bit complicated q code, but it does a simple thing: it builds a dictionary of <table names> -> <table counts> 
     / another way to do it would be to load partitioned table with .Q.l[] and simply call <count> for each <tableNames> 
-    /   we don't do it with .Q.l[] because it's a design choice to keep <.quarkWrite> module independent from loading database into memory
+    /   we don't do it with .Q.l[] because it's a design choice to keep <.write> module independent from loading database into memory
     /   for example, it can process multiple databases at the same time
     / one more design decision might be to keep counts in memory
     /   it's a reasonable option, but my choice was not to complicate the code and also avoid delta-based calculations
     /   this is an arguable decision and we might revisit it if scanning partitions on disk actually takes reasonable amount of time
     t02:.z.T; tableCounts:tableNames!{[d;p;t] sum {[d;p;t] path:.Q.par[d;p;t]; $[() ~ key path;0j;count get path]}[d;;t] each p}[hsym[path];(key hsym[path]) except `sym;] each tableNames;
-    .quarkPerf.check[`.quarkWrite.flushDatabase;`countTables;path];
+    .quarkPerf.check[`.write.flushDatabase;`countTables;path];
 
     / tell the world we have achieved something very important
     t99:.z.T; 1 "Flushing ",string[path]," complete; write time: ",string[0.001*(t02-t01)],"us, count time: ",string[0.001*(t99-t02)],"us\n";
 
     / remove inactive handlers
-    .quarkWrite.cleanUpHandles[];
+    .write.cleanUpHandles[];
 
     / notify our listeners that they need to reload their partitions from the disk
     /   we send them table counts so they can compare them to their view of table counts after reload
     /   it's possible that listened was blocked by a long query and they have two or more reload messages in inbound network queue, while data on disk is already updated
     /   this might create duplication of records, when one copy comes from the disk, and another is delivered over network into in-memory cache (generated by <writeData>)
     /   listeners should use table counts to detect such scenario and block incoming in-memeory cache updates until counts are in sync
-    {[listener;tableCounts] neg[listener[`handle]](listener[`flushHandler];tableCounts); }[;tableCounts] each 0!select from `.quarkWrite.listeners where databasePath=path, not flushHandler = `;
+    {[listener;tableCounts] neg[listener[`handle]](listener[`flushHandler];tableCounts); }[;tableCounts] each 0!select from `.write.listeners where databasePath=path, not flushHandler = `;
  };
 
-.quarkWrite.flushAll:{[currentTime;force]
+.write.flushAll:{[currentTime;force]
     / we are going to flush database when one of 3 conditions is met:
     /   - it's forced by the called (e.g. on shutdown)
     /   - time limit has passed since last flush
@@ -172,17 +172,17 @@ system "l /Users/nik/workspace/quark/quarkPerf.q";
     /   - having too stale data on disk when there are not many update (e.g. market status)
     /   - out of memory issues under load when there are too many updates within flush time limit
     / note that <max> accepts a list, hence we use <max[(...;...;...)]> syntax
-     .quarkWrite.flushDatabase[currentTime;] each exec distinct databasePath from .quarkWrite.tables where max[(force;currentTime > lastFlushTimestamp+flushTimeLimit;flushSizeLimit < {[table] count value .Q.dd[`.quarkCache;table]} each tableName)];
+     .write.flushDatabase[currentTime;] each exec distinct databasePath from .write.tables where max[(force;currentTime > lastFlushTimestamp+flushTimeLimit;flushSizeLimit < {[table] count value .Q.dd[`.quarkCache;table]} each tableName)];
  };
 
-.quarkWrite.timerTick:{[]
-    .quarkWrite.flushAll[.z.t;0b];
+.write.timerTick:{[]
+    .write.flushAll[.z.t;0b];
  };
 
-.quarkWrite.onExit:{[]
-    .quarkWrite.flushAll[.z.t;1b];
+.write.onExit:{[]
+    .write.flushAll[.z.t;1b];
  };
 
-.quarkWrite.onClose:{[]
-    .quarkWrite.cleanUpHandles[];
+.write.onClose:{[]
+    .write.cleanUpHandles[];
  }; 

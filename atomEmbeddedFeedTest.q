@@ -1,9 +1,9 @@
-system "l quarkWrite.q";
-system "l quarkMonitor.q";
+system "l write.q";
+system "l monitor.q";
 
-.quarkWrite.cleanUpTables[];
-.quarkWrite.loadTableConfig[pathToConfigFile:`$":tablesTest.csv"];
-.quarkWrite.loadTableConfig[pathToConfigFile:`$":tablesPerf.csv"];
+.write.cleanUpTables[];
+.write.loadTableConfig[pathToConfigFile:`$":tablesTest.csv"];
+.write.loadTableConfig[pathToConfigFile:`$":tablesPerf.csv"];
 
 / load database and change back to the original directory
 /   ...where is mistical .Q.lo (https://code.kx.com/q/ref/dotq/#lo-load-without)?
@@ -17,12 +17,12 @@ if[not .Q.qt[`quote];
     `sequences set ()!()
  ];
 
-.quarkWrite.writeData[table:`status;data:([]date:1#.z.D; channel:1#`statusChannel; sequence:1#0; symbol:1#`x; timestamp:1#.z.T; status:1#`start)];
-.quarkWrite.flushAll[currentTime:.z.t;force:1b];
+.write.writeData[table:`status;data:([]date:1#.z.D; channel:1#`statusChannel; sequence:1#0; symbol:1#`x; timestamp:1#.z.T; status:1#`start)];
+.write.flushAll[currentTime:.z.t;force:1b];
 
 writeQuoteData:{[channel;n]
     seq:$[channel in key sequences;sequences[channel];0j];
-    .quarkWrite.writeData[table:`quote;data:([]date:n#.z.D; channel:n#channel; sequence:seq+til n; symbol:n?`$'.Q.a; timestamp:n#.z.T; price:50f+n?50f)];
+    .write.writeData[table:`quote;data:([]date:n#.z.D; channel:n#channel; sequence:seq+til n; symbol:n?`$'.Q.a; timestamp:n#.z.T; price:50f+n?50f)];
     sequences[channel]:seq+n;
  };
 
@@ -45,13 +45,13 @@ enableMonitor:1b;
         writeQuoteData[channel:`channel2;n:rand 10]
     ];
     if[enableMonitor;
-        .quarkWrite.writeData[name:`memory;data:(flip `date`time`file`host`port`pid!enlist each (.z.D;.z.T;.z.f;.z.h;system "p";.z.i)) ^ (flip enlist each .Q.w[])];
-        .quarkWrite.writeData[name:`cputime;data:`date`time`file`host`port`pid xcols update date:.z.D, time:.z.T, file:.z.f, host:.z.h, port:system "p", pid:.z.i from .quarkPerf.reset[]];
+        .write.writeData[name:`memory;data:(flip `date`time`file`host`port`pid!enlist each (.z.D;.z.T;.z.f;.z.h;system "p";.z.i)) ^ (flip enlist each .Q.w[])];
+        .write.writeData[name:`cputime;data:`date`time`file`host`port`pid xcols update date:.z.D, time:.z.T, file:.z.f, host:.z.h, port:system "p", pid:.z.i from .quarkPerf.reset[]];
     ];
-    .quarkWrite.timerTick[];
+    .write.timerTick[];
  };
 
-.z.pc:{.quarkWrite.onClose[]};
+.z.pc:{.write.onClose[]};
 
-.z.exit:{.quarkWrite.onExit[]};
+.z.exit:{.write.onExit[]};
 
